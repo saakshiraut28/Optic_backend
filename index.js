@@ -23,15 +23,13 @@ const PORT = process.env.PORT ?? 3000;
 // ─────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "*", // Lock this down to your frontend URL in production
+    origin: process.env.FRONTEND_URL ?? "*",
   }),
 );
 app.use(express.json());
 app.use(morgan("dev"));
 
-// ─────────────────────────────────────────────
-//  HEALTH CHECK
-// ─────────────────────────────────────────────
+
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
@@ -40,9 +38,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// ─────────────────────────────────────────────
-//  ROUTES
-// ─────────────────────────────────────────────
 
 // Profile  — create, view, update, followers, following
 app.use("/api/profile", profileRoutes);
@@ -84,8 +79,8 @@ app.use((err, req, res, next) => {
 //  START
 // ─────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`✅  ProofApp API running on http://localhost:${PORT}`);
-  console.log(`📦  Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "ProofApp"}`);
+  console.log(`✅  Optic API running on http://localhost:${PORT}`);
+  console.log(`📦  Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "Optic"}`);
 });
 
 module.exports = app;
