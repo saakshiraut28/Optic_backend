@@ -75,12 +75,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: "Internal server error" });
 });
 
-// ─────────────────────────────────────────────
-//  START
-// ─────────────────────────────────────────────
+
 app.listen(PORT, () => {
-  console.log(`✅  Optic API running on http://localhost:${PORT}`);
-  console.log(`📦  Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "Optic"}`);
+  console.log(` Optic API running on http://localhost:${PORT}`);
+  console.log(` Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "Optic"}`);
 });
 
 module.exports = app;
