@@ -11,7 +11,6 @@ const tapestry = axios.create({
 tapestry.interceptors.request.use((config) => {
   config.params = {
     apiKey: process.env.TAPESTRY_API_KEY,
-    namespace: process.env.TAPESTRY_NAMESPACE ?? "Optic",
     ...config.params,
   };
   return config;
