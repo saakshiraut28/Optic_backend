@@ -21,6 +21,7 @@ const { tapestryError } = require("../config/errorHandler");
 router.post("/", async (req, res) => {
   try {
     const {
+      id,
       profileId,
       content,
       proofType,
@@ -29,23 +30,31 @@ router.post("/", async (req, res) => {
       proofCitation,
     } = req.body;
 
-    const customProperties = [{ key: "postType", value: "original" }];
+    // properties must never be empty — always send at least 2 entries.
+    // "text" is stored as a property so it comes back in GET responses.
+    const properties = [
+      { key: "postType", value: "original" },
+      { key: "proofType", value: proofType ?? "none" },
+      { key: "text", value: content }, // store post body so it appears in responses
+    ];
 
-    if (proofType)
-      customProperties.push({ key: "proofType", value: proofType });
-    if (proofUrl) customProperties.push({ key: "proofUrl", value: proofUrl });
-    if (proofMedia)
-      customProperties.push({ key: "proofMedia", value: proofMedia });
+    if (proofUrl) properties.push({ key: "proofUrl", value: proofUrl });
+    if (proofMedia) properties.push({ key: "proofMedia", value: proofMedia });
     if (proofCitation)
-      customProperties.push({ key: "proofCitation", value: proofCitation });
+      properties.push({ key: "proofCitation", value: proofCitation });
+
+    const postId =
+      id ??
+      `${profileId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     const { data } = await tapestry.post("/contents/findOrCreate", {
+      id: postId,
       profileId,
       content,
       contentType: "text",
       blockchain: "SOLANA",
       execution: "FAST_UNCONFIRMED",
-      customProperties,
+      properties,
     });
 
     return res.status(201).json({ success: true, data });
@@ -55,7 +64,7 @@ router.post("/", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-//  GET /api/posts/feed/home
+//  GET /api/posts/feed/home ->>>> work in progress
 //  Get posts from users the current user follows (home feed).
 //
 //  Query: ?profileId=johndoe&page=1&pageSize=20
@@ -64,7 +73,7 @@ router.get("/feed/home", async (req, res) => {
   try {
     const { profileId, page = 1, pageSize = 20 } = req.query;
 
-    const { data } = await tapestry.get(`/contents/following/${profileId}`, {
+    const { data } = await tapestry.get(`/contents/`, {
       params: { page, pageSize },
     });
 
@@ -94,24 +103,31 @@ router.get("/feed/explore", async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────
+/// ─────────────────────────────────────────────
 //  GET /api/posts/user/:profileId
-//  Get all posts created by a specific user.
+//  All posts by a specific user.
 //
-//  Query: ?page=1&pageSize=20
+//  Query: ?limit=20&offset=0
 // ─────────────────────────────────────────────
 router.get("/user/:profileId", async (req, res) => {
   try {
-    const { page = 1, pageSize = 20 } = req.query;
+    const { pageSize = 20 } = req.query;
+    const { profileId } = req.params;
 
-    const { data } = await tapestry.get(
-      `/contents/profile/${req.params.profileId}`,
-      {
-        params: { page, pageSize },
-      },
-    );
+    // Tapestry has no /contents/profile/:id endpoint.
+    // Fetch a broad batch and filter by authorId/creatorId matching the profileId.
+    const { data } = await tapestry.get("/contents", {
+      params: { limit: 100, offset: 0 },
+    });
 
-    return res.status(200).json({ success: true, data });
+    const allContents = data?.contents ?? [];
+
+    // Author ID lives at authorProfile.id based on Tapestry response structure
+    const userPosts = allContents
+      .filter((item) => item?.authorProfile?.id === profileId)
+      .slice(0, Number(pageSize));
+
+    return res.status(200).json({ success: true, data: userPosts });
   } catch (error) {
     return tapestryError(res, error);
   }
@@ -141,19 +157,20 @@ router.put("/:postId", async (req, res) => {
     const { content, proofType, proofUrl, proofMedia, proofCitation } =
       req.body;
 
-    const customProperties = [];
-    if (proofType)
-      customProperties.push({ key: "proofType", value: proofType });
-    if (proofUrl) customProperties.push({ key: "proofUrl", value: proofUrl });
-    if (proofMedia)
-      customProperties.push({ key: "proofMedia", value: proofMedia });
+    const properties = [];
+
+    // Keep "text" property in sync with content field
+    if (content) properties.push({ key: "text", value: content });
+    if (proofType) properties.push({ key: "proofType", value: proofType });
+    if (proofUrl) properties.push({ key: "proofUrl", value: proofUrl });
+    if (proofMedia) properties.push({ key: "proofMedia", value: proofMedia });
     if (proofCitation)
-      customProperties.push({ key: "proofCitation", value: proofCitation });
+      properties.push({ key: "proofCitation", value: proofCitation });
 
     const { data } = await tapestry.put(`/contents/${req.params.postId}`, {
       id: req.params.postId,
       ...(content && { content }),
-      ...(customProperties.length && { customProperties }),
+      ...(properties.length && { properties }),
     });
 
     return res.status(200).json({ success: true, data });
