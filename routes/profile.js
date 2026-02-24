@@ -6,6 +6,19 @@ const tapestry = require("../config/tapestry");
 const { tapestryError } = require("../config/errorHandler");
 
 // ─────────────────────────────────────────────
+//  GET /api/profile
+//  Fetch a user's full profile by username or profile ID.
+// ─────────────────────────────────────────────
+router.get("", async (req, res) => {
+  try {
+    const { data } = await tapestry.get(`/profiles`);
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
+    return tapestryError(res, error);
+  }
+});
+
+// ─────────────────────────────────────────────
 //  POST /api/profile/findOrCreate
 //  Create a new profile or retrieve an existing one.
 //  Acts as both Sign Up and Login in one call.
