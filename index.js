@@ -26,6 +26,7 @@ app.use(
     origin: process.env.FRONTEND_URL ?? "*",
   }),
 );
+app.options("*", cors()); 
 app.use(express.json());
 app.use(morgan("dev"));
 

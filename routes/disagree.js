@@ -8,35 +8,31 @@ const { tapestryError } = require("../config/errorHandler");
 // ─────────────────────────────────────────────
 //  POST /api/disagree
 //  Disagree with a post by submitting a counter-argument.
-//  A reason (text) is mandatory. Proof fields are optional but encouraged.
+//  reason (text) is mandatory. Proof fields are optional.
 //
-//  Body: {
-//    profileId,
-//    postId,
-//    reason,         — required: the counter-argument text
-//    proofUrl?,      — optional: link to supporting source
-//    proofMedia?,    — optional: CDN URL of image/video
-//    proofCitation?, — optional: text-based reference
-//  }
+//
+//  Body: { profileId, postId, reason, proofUrl?, proofMedia?, proofCitation? }
 // ─────────────────────────────────────────────
 router.post("/", async (req, res) => {
   try {
     const { profileId, postId, reason, proofUrl, proofMedia, proofCitation } =
       req.body;
 
-    const customProperties = [{ key: "type", value: "disagreement" }];
+    const properties = [
+      { key: "type", value: "disagreement" },
+      { key: "text", value: reason }, // store text as property so it comes back in GET
+    ];
 
-    if (proofUrl) customProperties.push({ key: "proofUrl", value: proofUrl });
-    if (proofMedia)
-      customProperties.push({ key: "proofMedia", value: proofMedia });
+    if (proofUrl) properties.push({ key: "proofUrl", value: proofUrl });
+    if (proofMedia) properties.push({ key: "proofMedia", value: proofMedia });
     if (proofCitation)
-      customProperties.push({ key: "proofCitation", value: proofCitation });
+      properties.push({ key: "proofCitation", value: proofCitation });
 
     const { data } = await tapestry.post("/comments", {
       profileId,
       contentId: postId,
       text: reason,
-      customProperties,
+      properties,
     });
 
     return res.status(201).json({ success: true, data });
@@ -48,9 +44,6 @@ router.post("/", async (req, res) => {
 // ─────────────────────────────────────────────
 //  GET /api/disagree/:postId
 //  Get all disagreements on a post.
-//  Filter by customProperties.type === "disagreement" on the frontend
-//  if you also have neutral replies and want to separate them.
-//
 //  Query: ?page=1&pageSize=20
 // ─────────────────────────────────────────────
 router.get("/:postId", async (req, res) => {
@@ -74,23 +67,22 @@ router.get("/:postId", async (req, res) => {
 // ─────────────────────────────────────────────
 //  PUT /api/disagree/:commentId
 //  Edit an existing disagreement.
-//
 //  Body: { reason?, proofUrl?, proofMedia?, proofCitation? }
 // ─────────────────────────────────────────────
 router.put("/:commentId", async (req, res) => {
   try {
     const { reason, proofUrl, proofMedia, proofCitation } = req.body;
 
-    const customProperties = [];
-    if (proofUrl) customProperties.push({ key: "proofUrl", value: proofUrl });
-    if (proofMedia)
-      customProperties.push({ key: "proofMedia", value: proofMedia });
+    const properties = [];
+    if (reason) properties.push({ key: "text", value: reason });
+    if (proofUrl) properties.push({ key: "proofUrl", value: proofUrl });
+    if (proofMedia) properties.push({ key: "proofMedia", value: proofMedia });
     if (proofCitation)
-      customProperties.push({ key: "proofCitation", value: proofCitation });
+      properties.push({ key: "proofCitation", value: proofCitation });
 
     const { data } = await tapestry.put(`/comments/${req.params.commentId}`, {
       ...(reason && { text: reason }),
-      ...(customProperties.length && { customProperties }),
+      ...(properties.length && { properties }),
     });
 
     return res.status(200).json({ success: true, data });
