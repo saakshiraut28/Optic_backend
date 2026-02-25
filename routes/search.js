@@ -11,15 +11,12 @@ const { tapestryError } = require("../config/errorHandler");
 //
 //  Body: { query, limit?, offset? }
 // ─────────────────────────────────────────────
-router.post("/", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const { query, limit = 20, offset = 0 } = req.body;
+    const { query, limit = 20, offset = 0 } = req.query;
 
-    const { data } = await tapestry.post("/profiles/search", {
-      username: query,
-      limit,
-      offset,
-      shouldIncludeExternalProfiles: false, // set true to search across all Tapestry apps
+    const { data } = await tapestry.get("/search/profiles", {
+      params: { query, limit, offset },
     });
 
     return res.status(200).json({ success: true, data });
@@ -37,13 +34,7 @@ router.post("/", async (req, res) => {
 // ─────────────────────────────────────────────
 router.get("/suggested", async (req, res) => {
   try {
-    const { profileId, limit = 10 } = req.query;
-
-    const { data } = await tapestry.get("/profiles/suggested", {
-      params: { profileId, limit },
-    });
-
-    return res.status(200).json({ success: true, data });
+    return console.log("Still working"); // working on this one
   } catch (error) {
     return tapestryError(res, error);
   }

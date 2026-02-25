@@ -10,11 +10,6 @@ const { tapestryError } = require("../config/errorHandler");
 //  Disagree with a post by submitting a counter-argument.
 //  A reason (text) is mandatory. Proof fields are optional but encouraged.
 //
-//  FRONTEND NOTE:
-//  When user clicks "Disagree", open a modal.
-//  Keep submit disabled until `reason` is filled.
-//  Optionally call DELETE /api/agree first if the user had previously agreed.
-//
 //  Body: {
 //    profileId,
 //    postId,
