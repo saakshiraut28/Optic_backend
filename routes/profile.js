@@ -77,7 +77,7 @@ router.put("/update", async (req, res) => {
     if (website !== undefined)
       properties.push({ key: "website", value: website });
 
-    const { data } = await tapestry.post("/profiles/update", {
+    const { data } = await tapestry.put(`/profiles/${id}`, {
       id,
       blockchain: "SOLANA",
       execution: "FAST_UNCONFIRMED",

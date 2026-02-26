@@ -43,9 +43,9 @@ router.post("/", async (req, res) => {
     if (proofCitation)
       properties.push({ key: "proofCitation", value: proofCitation });
 
-    const postId =
-      id ??
-      `${profileId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const postId =
+          id ??
+          `${profileId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
     const { data } = await tapestry.post("/contents/findOrCreate", {
       id: postId,
