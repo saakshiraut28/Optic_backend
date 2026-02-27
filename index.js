@@ -18,7 +18,7 @@ const disagreeRoutes = require("./routes/disagree");
 const notificationRoutes = require("./routes/notifications");
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT ?? 8080;
 
 // ─────────────────────────────────────────────
 //  MIDDLEWARE
