@@ -7,6 +7,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 
 // ── Route modules ──
+const authRoutes = require("./routes/auth");
+const verifyRoutes = require("./routes/verify");
 const profileRoutes = require("./routes/profile");
 const followRoutes = require("./routes/follow");
 const searchRoutes = require("./routes/search");
@@ -39,6 +41,11 @@ app.get("/", (req, res) => {
   });
 });
 
+// Auth - authentication and signing messages
+app.use("/api/auth", authRoutes);
+
+// Verify  — verifies a post before submiting
+app.use("/api/verify", verifyRoutes);
 
 // Profile  — create, view, update, followers, following
 app.use("/api/profile", profileRoutes);

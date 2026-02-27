@@ -73,7 +73,7 @@ router.put("/update", async (req, res) => {
     const properties = [];
     if (bio !== undefined) properties.push({ key: "bio", value: bio });
     if (profileImage !== undefined)
-      properties.push({ key: "profileImage", value: profileImage });
+      properties.push({ key: "image", value: profileImage });
     if (website !== undefined)
       properties.push({ key: "website", value: website });
 
