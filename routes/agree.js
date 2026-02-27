@@ -15,11 +15,8 @@ router.post("/", async (req, res) => {
   try {
     const { profileId, postId } = req.body;
 
-    const { data } = await tapestry.post("/likes", {
-      profileId,
-      contentId: postId,
-      blockchain: "SOLANA",
-      execution: "FAST_UNCONFIRMED",
+    const { data } = await tapestry.post(`/likes/${postId}`, {
+      startId: profileId,
     });
 
     return res.status(200).json({ success: true, data });
@@ -39,11 +36,8 @@ router.delete("/", async (req, res) => {
   try {
     const { profileId, postId } = req.body;
 
-    const { data } = await tapestry.delete("/likes", {
-      data: {
-        profileId,
-        contentId: postId,
-      },
+    const { data } = await tapestry.delete(`/likes/${postId}`, {
+      data: { startId: profileId },
     });
 
     return res.status(200).json({ success: true, data });
@@ -78,11 +72,8 @@ router.get("/check", async (req, res) => {
   try {
     const { profileId, postId } = req.query;
 
-    const { data } = await tapestry.get("/likes", {
-      params: {
-        profileId,
-        contentId: postId,
-      },
+    const { data } = await tapestry.get(`/likes/${postId}`, {
+      params: { startId: profileId },
     });
 
     return res.status(200).json({ success: true, data });

@@ -25,7 +25,7 @@ const PORT = process.env.PORT ?? 3000;
 // ─────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "*",
+    origin: process.env.FRONTEND_URL ?? "https://optic-solana.vercel.app/",
   }),
 );
 app.options("*", cors()); 
