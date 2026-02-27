@@ -7,9 +7,9 @@ const cors = require("cors");
 const morgan = require("morgan");
 
 // ── Route modules ──
-const authRoutes = require("./routes/auth");
-const verifyRoutes = require("./routes/verify");
 const profileRoutes = require("./routes/profile");
+const verifyRoutes = require("./routes/verify");
+const authRoutes = require("./routes/auth");
 const followRoutes = require("./routes/follow");
 const searchRoutes = require("./routes/search");
 const postRoutes = require("./routes/posts");
@@ -18,34 +18,44 @@ const disagreeRoutes = require("./routes/disagree");
 const notificationRoutes = require("./routes/notifications");
 
 const app = express();
-const PORT = process.env.PORT ?? 3000;
+const PORT = process.env.PORT;
 
 // ─────────────────────────────────────────────
 //  MIDDLEWARE
 // ─────────────────────────────────────────────
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "https://optic-solana.vercel.app/",
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "https://optic-solana.vercel.app/",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   }),
 );
-app.options("*", cors()); 
+app.options("*", cors()); // handle preflight requests
 app.use(express.json());
 app.use(morgan("dev"));
-
 
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    app: process.env.TAPESTRY_NAMESPACE ?? "Optic",
+    app: process.env.TAPESTRY_NAMESPACE ?? "ProofApp",
     version: "1.0.0",
   });
 });
 
-// Auth - authentication and signing messages
-app.use("/api/auth", authRoutes);
+// ─────────────────────────────────────────────
+//  ROUTES
+// ─────────────────────────────────────────────
 
-// Verify  — verifies a post before submiting
+// Verify — ai route
 app.use("/api/verify", verifyRoutes);
+
+// Auth — for user signup and login
+app.use("/api/auth", authRoutes);
 
 // Profile  — create, view, update, followers, following
 app.use("/api/profile", profileRoutes);
@@ -83,10 +93,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: "Internal server error" });
 });
 
-
-app.listen(PORT, () => {
-  console.log(` Optic API running on http://localhost:${PORT}`);
-  console.log(` Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "Optic"}`);
+// ─────────────────────────────────────────────
+//  START
+// ─────────────────────────────────────────────
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`ProofApp API running on http://localhost:${PORT}`);
+  console.log(`Namespace: ${process.env.TAPESTRY_NAMESPACE ?? "ProofApp"}`);
 });
 
 module.exports = app;
