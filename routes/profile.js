@@ -5,6 +5,23 @@ const router = express.Router();
 const tapestry = require("../config/tapestry");
 const { tapestryError } = require("../config/errorHandler");
 
+// Check deleted flag — works whether it's a direct prop or inside properties array
+const isProfileDeleted = (p) => {
+  const profile = p?.profile ?? p;
+  if (!profile) return false;
+  if (profile.deleted === "true") return true;
+  if (Array.isArray(profile.properties)) {
+    const prop = profile.properties.find((x) => x.key === "deleted");
+    if (prop?.value === "true") return true;
+  }
+  return false;
+};
+
+const filterDeleted = (profiles) =>
+  (profiles ?? []).filter((p) => !isProfileDeleted(p));
+const tapestry = require("../config/tapestry");
+const { tapestryError } = require("../config/errorHandler");
+
 // ─────────────────────────────────────────────
 //  GET /api/profile
 //  Fetch a user's full profile by username or profile ID.
@@ -12,6 +29,11 @@ const { tapestryError } = require("../config/errorHandler");
 router.get("", async (req, res) => {
   try {
     const { data } = await tapestry.get(`/profiles`);
+    if (isProfileDeleted(data?.profile)) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Profile not found." });
+    }
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return tapestryError(res, error);
@@ -54,6 +76,11 @@ router.post("/findOrCreate", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const { data } = await tapestry.get(`/profiles/${req.params.id}`);
+    if (isProfileDeleted(data?.profile)) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Profile not found." });
+    }
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return tapestryError(res, error);
@@ -106,8 +133,8 @@ router.get("/:id/followers", async (req, res) => {
         params: { page, pageSize },
       },
     );
-
-    return res.status(200).json({ success: true, data });
+    const profiles = filterDeleted(data?.profiles);
+    return res.status(200).json({ success: true, data: { ...data, profiles } });
   } catch (error) {
     return tapestryError(res, error);
   }
@@ -129,8 +156,8 @@ router.get("/:id/following", async (req, res) => {
         params: { page, pageSize },
       },
     );
-
-    return res.status(200).json({ success: true, data });
+    const profiles = filterDeleted(data?.profiles);
+    return res.status(200).json({ success: true, data: { ...data, profiles } });
   } catch (error) {
     return tapestryError(res, error);
   }
