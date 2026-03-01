@@ -7,6 +7,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 
 // ── Route modules ──
+const deleteProfileRoutes = require("./routes/deleteProfile");
 const profileRoutes = require("./routes/profile");
 const verifyRoutes = require("./routes/verify");
 const authRoutes = require("./routes/auth");
@@ -59,6 +60,9 @@ app.use("/api/auth", authRoutes);
 
 // Profile  — create, view, update, followers, following
 app.use("/api/profile", profileRoutes);
+
+// Delete Profile - removes the profile information, unlinks the wallet, removes all the post
+app.use("/api/profile/delete", deleteProfileRoutes);
 
 // Follow   — follow / unfollow a user
 app.use("/api/follow", followRoutes);
