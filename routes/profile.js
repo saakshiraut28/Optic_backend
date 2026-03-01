@@ -19,8 +19,6 @@ const isProfileDeleted = (p) => {
 
 const filterDeleted = (profiles) =>
   (profiles ?? []).filter((p) => !isProfileDeleted(p));
-const tapestry = require("../config/tapestry");
-const { tapestryError } = require("../config/errorHandler");
 
 // ─────────────────────────────────────────────
 //  GET /api/profile
