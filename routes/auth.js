@@ -105,6 +105,13 @@ router.post("/signin", async (req, res) => {
     }
 
     const profile = profiles[0]?.profile ?? profiles[0];
+
+    if (profile?.deleted === "true") {
+      return res
+        .status(403)
+        .json({ success: false, error: "This account has been deleted." });
+    }
+    
     return res.status(200).json({
       success: true,
       data: {

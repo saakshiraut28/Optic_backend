@@ -5,6 +5,19 @@ const router = express.Router();
 const tapestry = require("../config/tapestry");
 const { tapestryError } = require("../config/errorHandler");
 
+const isDeleted = (profile) => {
+  if (!profile) return false;
+  if (profile.deleted === "true") return true;
+  if (Array.isArray(profile.properties)) {
+    const prop = profile.properties.find((p) => p.key === "deleted");
+    if (prop?.value === "true") return true;
+  }
+  return false;
+};
+
+const filterDeleted = (contents) =>
+  (contents ?? []).filter((c) => !isDeleted(c.authorProfile));
+
 // ─────────────────────────────────────────────
 //  POST /api/posts
 //  Create a new post with optional proof.
@@ -71,17 +84,47 @@ router.post("/", async (req, res) => {
 // ─────────────────────────────────────────────
 router.get("/feed/home", async (req, res) => {
   try {
-    const { profileId, page = 1, pageSize = 20 } = req.query;
+    const { profileId, pageSize = 20 } = req.query;
 
-    const { data } = await tapestry.get(`/contents/`, {
-      params: { page, pageSize },
-    });
+    // Step 1 — get who this user follows
+    const followingRes = await tapestry.get(
+      `/followers/following/${profileId}`,
+      {
+        params: { limit: 50, offset: 0 },
+      },
+    );
 
-    return res.status(200).json({ success: true, data });
+    const following = followingRes.data?.profiles ?? [];
+
+    if (following.length === 0) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    // Step 2 — fetch recent posts for each followed profile in parallel
+    const postRequests = following.map(
+      (profile) =>
+        tapestry
+          .get(`/contents/profile/${profile.id}`, {
+            params: { limit: 10, offset: 0 },
+          })
+          .then((r) => r.data?.contents ?? [])
+          .catch(() => []), // if one profile fails, skip it silently
+    );
+
+    const postsNested = await Promise.all(postRequests);
+
+    // Step 3 — flatten, sort by newest first, limit to pageSize
+    const posts = postsNested
+      .flat()
+      .sort((a, b) => b.created_at - a.created_at)
+      .slice(0, Number(pageSize));
+
+    return res.status(200).json({ success: true, data: posts });
   } catch (error) {
     return tapestryError(res, error);
   }
 });
+
 
 // ─────────────────────────────────────────────
 //  GET /api/posts/feed/explore
@@ -97,7 +140,8 @@ router.get("/feed/explore", async (req, res) => {
       params: { page, pageSize },
     });
 
-    return res.status(200).json({ success: true, data });
+    const contents = filterDeleted(data?.contents);
+    return res.status(200).json({ success: true, data: { ...data, contents } });
   } catch (error) {
     return tapestryError(res, error);
   }
