@@ -28,7 +28,9 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "http://localhost:5174",
       "http://127.0.0.1:5173",
+      "http://127.0.0.1:5174",
       "https://optic-solana.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -58,11 +60,11 @@ app.use("/api/verify", verifyRoutes);
 // Auth — for user signup and login
 app.use("/api/auth", authRoutes);
 
-// Profile  — create, view, update, followers, following
-app.use("/api/profile", profileRoutes);
-
 // Delete Profile - removes the profile information, unlinks the wallet, removes all the post
 app.use("/api/profile/delete", deleteProfileRoutes);
+
+// Profile  — create, view, update, followers, following
+app.use("/api/profile", profileRoutes);
 
 // Follow   — follow / unfollow a user
 app.use("/api/follow", followRoutes);

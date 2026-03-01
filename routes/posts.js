@@ -2,8 +2,6 @@
 
 const express = require("express");
 const router = express.Router();
-const tapestry = require("../config/tapestry");
-const { tapestryError } = require("../config/errorHandler");
 
 const isDeleted = (profile) => {
   if (!profile) return false;
@@ -17,6 +15,9 @@ const isDeleted = (profile) => {
 
 const filterDeleted = (contents) =>
   (contents ?? []).filter((c) => !isDeleted(c.authorProfile));
+
+const tapestry = require("../config/tapestry");
+const { tapestryError } = require("../config/errorHandler");
 
 // ─────────────────────────────────────────────
 //  POST /api/posts
@@ -87,44 +88,39 @@ router.get("/feed/home", async (req, res) => {
     const { profileId, pageSize = 20 } = req.query;
 
     // Step 1 — get who this user follows
-    const followingRes = await tapestry.get(
-      `/followers/following/${profileId}`,
-      {
-        params: { limit: 50, offset: 0 },
-      },
-    );
+    const followingRes = await tapestry.get("/following", {
+      params: { profileId, page: 1, pageSize: 50 },
+    });
 
-    const following = followingRes.data?.profiles ?? [];
+    const following = (followingRes.data?.profiles ?? []).filter(
+      (p) => !isDeleted(p?.profile ?? p),
+    );
 
     if (following.length === 0) {
-      return res.status(200).json({ success: true, data: [] });
+      return res.status(200).json({ success: true, data: { contents: [] } });
     }
 
-    // Step 2 — fetch recent posts for each followed profile in parallel
-    const postRequests = following.map(
-      (profile) =>
-        tapestry
-          .get(`/contents/profile/${profile.id}`, {
-            params: { limit: 10, offset: 0 },
-          })
-          .then((r) => r.data?.contents ?? [])
-          .catch(() => []), // if one profile fails, skip it silently
-    );
+    // Step 2 — fetch all contents and filter by followed profiles
+    const followedIds = new Set(following.map((p) => p.profile?.id ?? p.id));
+    const { data: allData } = await tapestry.get("/contents", {
+      params: { page: 1, pageSize: 100 },
+    });
+    const allContents = allData?.contents ?? [];
 
-    const postsNested = await Promise.all(postRequests);
-
-    // Step 3 — flatten, sort by newest first, limit to pageSize
-    const posts = postsNested
-      .flat()
-      .sort((a, b) => b.created_at - a.created_at)
+    // Step 3 — filter to only posts from followed profiles, remove deleted authors
+    const posts = allContents
+      .filter(
+        (c) =>
+          followedIds.has(c.authorProfile?.id) && !isDeleted(c.authorProfile),
+      )
+      .sort((a, b) => b.content.created_at - a.content.created_at)
       .slice(0, Number(pageSize));
 
-    return res.status(200).json({ success: true, data: posts });
+    return res.status(200).json({ success: true, data: { contents: posts } });
   } catch (error) {
     return tapestryError(res, error);
   }
 });
-
 
 // ─────────────────────────────────────────────
 //  GET /api/posts/feed/explore
